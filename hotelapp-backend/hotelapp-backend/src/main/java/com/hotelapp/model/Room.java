@@ -1,14 +1,24 @@
 package com.hotelapp.model;
 
-import java.time.LocalDateTime;
+import com.hotelapp.enums.RoomType;
+import jakarta.persistence.Entity;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+
 import java.util.List;
 
+@Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Room {
     private Long id;
-    private String firstName;
-    private String lastName;
-    private String email;
-    private String phone;
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private List<Booking> bookings;
-}
+    private String roomNumber;
+    private RoomType roomType;
+    private Double pricePerNight;
+    private Integer capacity;
+    private String description;
+    private Boolean available = true;
+    private List<Booking> bookings;}
