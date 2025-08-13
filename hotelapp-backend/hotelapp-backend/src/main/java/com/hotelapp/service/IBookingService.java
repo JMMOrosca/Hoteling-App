@@ -6,12 +6,12 @@ import com.hotelapp.model.Booking;
 import java.util.List;
 import java.util.Optional;
 
-public interface BookingService {
+public interface IBookingService {
     public List<Booking> getAllBookings();
     public Optional<Booking> getBookingById(Long id);
     public List<Booking> getBookingsByCustomerId(Long customerId);
     public List<Booking> getBookingsByStatus(BookingStatus status);
     public Booking createBooking(Booking booking);
-    public Booking updateBookingStatus(Long id, Booking status);
+    public Booking updateBookingStatus(Long id, BookingStatus status);
     public void deleteBooking(Long id);
 }
