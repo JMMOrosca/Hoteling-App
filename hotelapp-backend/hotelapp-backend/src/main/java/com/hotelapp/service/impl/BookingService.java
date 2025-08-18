@@ -1,6 +1,10 @@
 package com.hotelapp.service.impl;
 
+import com.hotelapp.dto.BookingDTO;
 import com.hotelapp.enums.BookingStatus;
+import com.hotelapp.mapper.BookingMapper;
+import com.hotelapp.mapper.CustomerMapper;
+import com.hotelapp.mapper.RoomMapper;
 import com.hotelapp.model.Booking;
 import com.hotelapp.model.Customer;
 import com.hotelapp.model.Room;
@@ -18,6 +22,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService implements IBookingService {
@@ -31,81 +36,102 @@ public class BookingService implements IBookingService {
     @Autowired
     private RoomRepo roomRepo;
 
+    @Autowired
+    private BookingMapper bookingMapper;
+
+    @Autowired
+    private RoomMapper roomMapper;
+
+    @Autowired
+    private CustomerMapper customerMapper;
+
     Customer customer = new Customer();
     Room room = new Room();
     @Override
-    public List<Booking> getAllBookings() {
-        return bookingRepo.findAll();
+    public List<BookingDTO> getAllBookings() {
+        return bookingRepo.findAll()
+                .stream()
+                .map(bookingMapper)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Booking> getBookingById(Long id) {
-        return bookingRepo.findById(id);
+    public Optional<BookingDTO> getBookingById(Long id) {
+        return bookingRepo.findById(id)
+                .map(bookingMapper);
     }
 
     @Override
-    public List<Booking> getBookingsByCustomerId(Long customerId) {
-        return bookingRepo.findByCustomerId(customerId);
+    public List<BookingDTO> getBookingsByCustomerId(Long customerId) {
+        return bookingRepo.findByCustomerId(customerId)
+                .stream()
+                .map(bookingMapper)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Booking> getBookingsByStatus(BookingStatus status) {
-        return bookingRepo.findByStatus(status);
+    public List<BookingDTO> getBookingsByStatus(BookingStatus status) {
+        return bookingRepo.findByStatus(status)
+                .stream()
+                .map(bookingMapper)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public Booking createBooking(Booking booking) {
-        if(booking.getCheckInDate().isAfter(booking.getCheckOutDate())){
+    public BookingDTO createBooking(BookingDTO bookingDTO) {
+        if(bookingDTO.checkInDate().isAfter(bookingDTO.checkOutDate())){
             throw new RuntimeException("Check-in date must be before check-out date");
         }
-        if(booking.getCheckInDate().isBefore(LocalDate.now())){
+        if(bookingDTO.checkInDate().isBefore(LocalDate.now())){
             throw new RuntimeException("Check-in date cannot be in the past");
         }
-        Customer newCustomer = customerRepo.findById(customer.getId())
-                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customer.getId()));
-        Room newRoom = roomRepo.findById(room.getId())
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + room.getId()));
+        Customer customer = customerRepo.findById(bookingDTO.customerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found with id: " + bookingDTO.customerId()));
+        Room room = roomRepo.findById(bookingDTO.roomId())
+                .orElseThrow(() -> new RuntimeException("Room not found with id: " + bookingDTO.roomId()));
 
         if(!room.getAvailable()){
             throw new RuntimeException("Room is not available");
         }
         List<Room> availableRooms = roomRepo.findAvailableRoomsForDates(
-                booking.getCheckInDate(), booking.getCheckOutDate());
+                bookingDTO.checkInDate(), bookingDTO.checkOutDate());
 
-        boolean roomAvailbleForDates = availableRooms.stream()
+        boolean roomAvailableForDates = availableRooms.stream()
                 .anyMatch(r -> r.getId().equals(room.getId()));
-        if(!roomAvailbleForDates){
-            throw new RuntimeException("Room is not avilable for the specified dates");
+        if(!roomAvailableForDates){
+            throw new RuntimeException("Room is not available for the specified dates");
         }
-        if(booking.getNumberOfGuests() > room.getCapacity()){
+        if(bookingDTO.numberOfGuests() > room.getCapacity()){
             throw new RuntimeException("Number of guests exceeds room capacity");
         }
 
-        long numberOfNights = ChronoUnit.DAYS.between(booking.getCheckInDate(), booking.getCheckOutDate());
+        long numberOfNights = ChronoUnit.DAYS.between(bookingDTO.checkInDate(), bookingDTO.checkOutDate());
         double totalAmount = room.getPricePerNight() * numberOfNights;
 
-        Booking newBooking = new Booking();
-        newBooking.setCustomer(newCustomer);
-        newBooking.setRoom(newRoom);
-        newBooking.setCheckInDate(booking.getCheckInDate());
-        booking.setCheckOutDate(booking.getCheckOutDate());
-        booking.setNumberOfGuests(booking.getNumberOfGuests());
+        Booking booking = new Booking();
+        booking.setCustomer(customer);
+        booking.setRoom(room);
+        booking.setCheckInDate(bookingDTO.checkInDate());
+        booking.setCheckOutDate(bookingDTO.checkOutDate());
+        booking.setNumberOfGuests(bookingDTO.numberOfGuests());
         booking.setTotalAmount(totalAmount);
         booking.setStatus(BookingStatus.CONFIRMED);
 
-        return bookingRepo.save(newBooking);
+        Booking savedBooking = bookingRepo.save(booking);
+
+        return bookingMapper.apply(savedBooking);
     }
 
     @Override
     @Transactional
-    public Booking updateBookingStatus(Long id, BookingStatus status) {
+    public BookingDTO updateBookingStatus(Long id, BookingStatus status) {
         Booking booking = bookingRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
         BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(status);
-
-        return bookingRepo.save(booking);
+        Booking savedBooking = bookingRepo.save(booking);
+        return bookingMapper.apply(savedBooking);
     }
 
     @Override

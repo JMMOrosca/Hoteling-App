@@ -1,5 +1,7 @@
 package com.hotelapp.service.impl;
 
+import com.hotelapp.dto.CustomerDTO;
+import com.hotelapp.mapper.CustomerMapper;
 import com.hotelapp.model.Customer;
 import com.hotelapp.repo.CustomerRepo;
 import com.hotelapp.service.ICustomerService;
@@ -8,53 +10,65 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CustomerService implements ICustomerService {
 
     @Autowired
+    private CustomerMapper customerMapper;
+
+    @Autowired
     private CustomerRepo customerRepo;
 
     @Override
-    public List<Customer> getAllCustomers() {
-        return customerRepo.findAll();
+    public List<CustomerDTO> getAllCustomers() {
+        return customerRepo.findAll()
+                .stream()
+                .map(customerMapper)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Customer> getCustomerById(Long id) {
-        return customerRepo.findById(id);
+    public Optional<CustomerDTO> getCustomerById(Long id) {
+        return customerRepo.findById(id)
+                .map(customerMapper);
     }
 
     @Override
-    public Optional<Customer> getCustomerByEmail(String email) {
-        return customerRepo.findByEmail(email);
+    public Optional<CustomerDTO> getCustomerByEmail(String email) {
+        return customerRepo.findByEmail(email)
+                .map(customerMapper);
     }
 
     @Override
-    public Customer createCustomer(Customer customer) {
-        if(customerRepo.existsByEmail(customer.getEmail())){
+    public CustomerDTO createCustomer(CustomerDTO customerDTO) {
+        if(customerRepo.existsByEmail(customerDTO.email())){
             throw new RuntimeException("Email already exists");
         }
-        return customerRepo.save(customer);
+        Customer customer = customerMapper.toEntity(customerDTO);
+        Customer savedCustomer = customerRepo.save(customer);
+        return customerMapper.apply(savedCustomer);
     }
 
     @Override
-    public Customer updateCustomer(Long id, Customer customer) {
+    public CustomerDTO updateCustomer(Long id, CustomerDTO customerDTO) {
         Optional<Customer> existingCustomer = customerRepo.findById(id);
         if(existingCustomer.isEmpty()){
             throw new RuntimeException("Customer not found with id:" + id);
         }
-        if(!existingCustomer.get().getEmail().equals(customer.getEmail()) &&
-                customerRepo.existsByEmail(customer.getEmail())){
+        if(!existingCustomer.get().getEmail().equals(customerDTO.email()) &&
+                customerRepo.existsByEmail(customerDTO.email())){
             throw new RuntimeException("Customer with email already exists");
         }
         Customer newCustomer = existingCustomer.get();
-        newCustomer.setFirstName(customer.getFirstName());
-        newCustomer.setLastName(customer.getLastName());
-        newCustomer.setEmail(customer.getEmail());
-        newCustomer.setPhone(customer.getPhone());
+        newCustomer.setFirstName(customerDTO.firstName());
+        newCustomer.setLastName(customerDTO.lastName());
+        newCustomer.setEmail(customerDTO.email());
+        newCustomer.setPhone(customerDTO.phone());
 
-        return customerRepo.save(newCustomer);
+        Customer savedCustomer = customerRepo.save(newCustomer);
+        return customerMapper.apply(savedCustomer);
     }
 
     @Override
