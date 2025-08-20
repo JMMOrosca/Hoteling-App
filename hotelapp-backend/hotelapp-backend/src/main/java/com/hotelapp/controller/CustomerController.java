@@ -1,5 +1,6 @@
 package com.hotelapp.controller;
 
+import com.hotelapp.dto.CustomerDTO;
 import com.hotelapp.model.Customer;
 import com.hotelapp.service.impl.CustomerService;
 import jakarta.validation.Valid;
@@ -21,40 +22,40 @@ public class CustomerController {
     private CustomerService customerService;
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers(){
-        List<Customer> customers = customerService.getAllCustomers();
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers(){
+        List<CustomerDTO> customers = customerService.getAllCustomers();
         return ResponseEntity.ok(customers);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long id){
-        Optional<Customer> customer = customerService.getCustomerById(id);
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long id){
+        Optional<CustomerDTO> customer = customerService.getCustomerById(id);
         return customer.map(ResponseEntity :: ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/email/{email}")
-    public ResponseEntity<Customer> getCustomerByEmail(@PathVariable String email){
-        Optional<Customer> customer = customerService.getCustomerByEmail(email);
+    public ResponseEntity<CustomerDTO> getCustomerByEmail(@PathVariable String email){
+        Optional<CustomerDTO> customer = customerService.getCustomerByEmail(email);
         return customer.map(ResponseEntity :: ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(@Valid @RequestBody Customer customer){
-        Customer createdCustomer = customerService.createCustomer(customer);
+    public ResponseEntity<CustomerDTO> createCustomer(@Valid @RequestBody CustomerDTO customerDTO){
+        CustomerDTO createdCustomer = customerService.createCustomer(customerDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdCustomer);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomerInfo(@PathVariable Long id,
-                                                        @Valid @RequestBody Customer customer){
-        Customer updatedCustomer = customerService.updateCustomer(id,customer);
+    public ResponseEntity<CustomerDTO> updateCustomerInfo(@PathVariable Long id,
+                                                        @Valid @RequestBody CustomerDTO customerDTO){
+        CustomerDTO updatedCustomer = customerService.updateCustomer(id,customerDTO);
         return ResponseEntity.ok(updatedCustomer);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Customer> deleteCustomer(@PathVariable Long id){
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id){
         customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }

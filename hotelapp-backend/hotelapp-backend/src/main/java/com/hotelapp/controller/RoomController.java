@@ -1,5 +1,6 @@
 package com.hotelapp.controller;
 
+import com.hotelapp.dto.RoomDTO;
 import com.hotelapp.enums.RoomType;
 import com.hotelapp.model.Room;
 import com.hotelapp.service.impl.BookingService;
@@ -24,53 +25,53 @@ public class RoomController {
     private RoomService roomService;
 
     @GetMapping
-    public ResponseEntity<List<Room>> getAllRooms(){
-        List<Room> rooms = roomService.getAllRooms();
+    public ResponseEntity<List<RoomDTO>> getAllRooms(){
+        List<RoomDTO> rooms = roomService.getAllRooms();
         return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Room> getRoomById(@PathVariable Long id){
-        Optional<Room> room = roomService.getRoomById(id);
+    public ResponseEntity<RoomDTO> getRoomById(@PathVariable Long id){
+        Optional<RoomDTO> room = roomService.getRoomById(id);
         return room.map(ResponseEntity :: ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/available")
-    public ResponseEntity<List<Room>> getAvailableRooms(){
-        List<Room> rooms = roomService.getAvailableRooms();
+    public ResponseEntity<List<RoomDTO>> getAvailableRooms(){
+        List<RoomDTO> rooms = roomService.getAvailableRooms();
         return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/type/{roomType}")
-    public ResponseEntity<List<Room>> getRoomsByType(@PathVariable RoomType roomType){
-        List<Room> rooms = roomService.getRoomsByType(roomType);
+    public ResponseEntity<List<RoomDTO>> getRoomsByType(@PathVariable RoomType roomType){
+        List<RoomDTO> rooms = roomService.getRoomsByType(roomType);
         return ResponseEntity.ok(rooms);
     }
 
     @GetMapping("/availability")
-    public ResponseEntity<List<Room>> getAvailableRoomsForDates(
+    public ResponseEntity<List<RoomDTO>> getAvailableRoomsForDates(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate){
-        List<Room> availableRooms = roomService.getAvailableRoomsForDates(checkInDate, checkOutDate);
+        List<RoomDTO> availableRooms = roomService.getAvailableRoomsForDates(checkInDate, checkOutDate);
         return ResponseEntity.ok(availableRooms);
     }
 
     @PostMapping
-    public ResponseEntity<Room> createRoom(@Valid @RequestBody Room room){
-        Room createdRoom = roomService.createRoom(room);
+    public ResponseEntity<RoomDTO> createRoom(@Valid @RequestBody RoomDTO roomDTO){
+        RoomDTO createdRoom = roomService.createRoom(roomDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Room> updateRoom(@PathVariable Long id,
-                                           @Valid @RequestBody Room room){
-        Room updatedRoom = roomService.updateRoom(id, room);
+    public ResponseEntity<RoomDTO> updateRoom(@PathVariable Long id,
+                                           @Valid @RequestBody RoomDTO roomDTO){
+        RoomDTO updatedRoom = roomService.updateRoom(id, roomDTO);
         return ResponseEntity.ok(updatedRoom);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Room> deleteRoom(@PathVariable Long id){
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long id){
         roomService.deleteRoom(id);
         return ResponseEntity.noContent().build();
     }

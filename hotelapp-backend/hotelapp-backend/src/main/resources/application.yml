@@ -13,6 +13,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
-
+  mail:
+    host: ${HOST}
+    port: ${PORT}
+    username: ${HOTEL.USERNAME}
 server:
   port: 8080

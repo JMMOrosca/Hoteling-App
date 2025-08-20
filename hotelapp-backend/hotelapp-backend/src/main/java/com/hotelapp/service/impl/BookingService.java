@@ -16,8 +16,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.management.RuntimeMBeanException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -44,6 +42,9 @@ public class BookingService implements IBookingService {
 
     @Autowired
     private CustomerMapper customerMapper;
+
+    @Autowired
+    private EmailService emailService;
 
     Customer customer = new Customer();
     Room room = new Room();
@@ -120,6 +121,8 @@ public class BookingService implements IBookingService {
 
         Booking savedBooking = bookingRepo.save(booking);
 
+        emailService.sendBookingConfirmationEmail(savedBooking);
+
         return bookingMapper.apply(savedBooking);
     }
 
@@ -131,6 +134,11 @@ public class BookingService implements IBookingService {
         BookingStatus oldStatus = booking.getStatus();
         booking.setStatus(status);
         Booking savedBooking = bookingRepo.save(booking);
+
+        if(status == BookingStatus.CANCELLED && oldStatus != BookingStatus.CANCELLED){
+            emailService.sendBookingCancellationEmail(savedBooking);
+        }
+
         return bookingMapper.apply(savedBooking);
     }
 
@@ -139,6 +147,9 @@ public class BookingService implements IBookingService {
     public void deleteBooking(Long id) {
         Booking booking = bookingRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
+
+        emailService.sendBookingCancellationEmail(booking);
+
         bookingRepo.deleteById(id);
     }
 }
